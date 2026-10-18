@@ -1,0 +1,941 @@
+<title>Olu Olugbemi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ============================================================
+   THE ROUTE SO FAR
+   A life routed like a PCB trace. Every row reads left to right,
+   oldest to newest; rows connect through vias, the way a real
+   board changes layer instead of doubling back.
+   ============================================================ */
+
+:root{
+  --board:#EEF0F3;
+  --surface:#FFFFFF;
+  --sunk:#E3E6EB;
+  --ink:#0F131A;
+  --muted:#5A6472;
+  --line:#D3D8DF;
+  --trace:#BEC5CF;
+  --copper:#A65E1E;
+  --copper-lit:#D87B22;
+  --solder:#2C6E9B;
+  --venture:#0D7A57;
+  --life:#6B4BA6;
+  --pad:#FFFFFF;
+  --dots:#C6CCD6;
+  --hatch:rgba(166,94,30,.09);
+  --wash-a:rgba(166,94,30,.16);
+  --wash-b:rgba(44,110,155,.14);
+
+  --s0:.6875rem; --s1:.8125rem; --s2:.9375rem; --s3:1.0625rem;
+  --s4:1.3125rem; --s5:1.875rem; --s6:clamp(2.1rem,4.6vw,3.4rem);
+  --gut:clamp(16px,3vw,40px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --board:#0B0E13; --surface:#141922; --sunk:#10141B;
+    --ink:#E6EAF0; --muted:#8B94A3; --line:#232A36;
+    --trace:#2E3745; --copper:#C9873F; --copper-lit:#F2A94B;
+    --solder:#5FA8DC; --venture:#41C595; --life:#A98CE8; --pad:#1B222D;
+    --dots:#252D3A; --hatch:rgba(201,135,63,.10);
+    --wash-a:rgba(201,135,63,.18); --wash-b:rgba(95,168,220,.14);
+  }
+}
+:root[data-theme="dark"]{
+  --board:#0B0E13; --surface:#141922; --sunk:#10141B;
+  --ink:#E6EAF0; --muted:#8B94A3; --line:#232A36;
+  --trace:#2E3745; --copper:#C9873F; --copper-lit:#F2A94B;
+  --solder:#5FA8DC; --venture:#41C595; --life:#A98CE8; --pad:#1B222D;
+  --dots:#252D3A; --hatch:rgba(201,135,63,.10);
+  --wash-a:rgba(201,135,63,.18); --wash-b:rgba(95,168,220,.14);
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--board); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:var(--s3); line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+:focus-visible{outline:2px solid var(--copper-lit); outline-offset:3px;}
+.wrap{max-width:1420px; margin-inline:auto; padding-inline:var(--gut);}
+
+/* ---------------- header ---------------- */
+header.top{padding-block:clamp(26px,4vw,52px) clamp(16px,2vw,26px); display:grid; gap:clamp(16px,3vw,44px); grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); align-items:end;}
+@media (max-width:900px){ header.top{grid-template-columns:1fr; align-items:start;} }
+.eyebrow{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:var(--s0); letter-spacing:.17em;
+  text-transform:uppercase; color:var(--copper); margin:0 0 12px;
+}
+h1{font-family:"Sora",sans-serif; font-weight:800; font-size:var(--s6); line-height:1.0; letter-spacing:-.035em; margin:0; max-width:14ch; text-wrap:balance;}
+header.top p{margin:16px 0 0; color:var(--muted); max-width:50ch; font-size:var(--s4); line-height:1.45;}
+header.top p b{color:var(--ink); font-weight:600;}
+
+.legend{display:grid; gap:9px; border:1px solid var(--line); background:var(--surface); padding:15px 16px;}
+.legend .lh{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);}
+.legend div.row{display:flex; align-items:center; gap:10px; font-size:var(--s2);}
+.legend i{width:11px; height:11px; border-radius:50%; border:2.5px solid currentColor; flex:none;}
+.legend span{color:var(--ink);}
+.legend .e{color:var(--solder);} .legend .g{color:var(--copper);}
+.legend .v{color:var(--venture);} .legend .l{color:var(--life);}
+
+/* ---------------- controls ---------------- */
+.controls{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding-bottom:12px;}
+.btn{
+  font-family:"IBM Plex Mono",monospace; font-size:var(--s0); letter-spacing:.12em; text-transform:uppercase;
+  background:transparent; border:1px solid var(--line); color:var(--muted); padding:8px 12px; cursor:pointer;
+}
+.btn:hover{color:var(--ink); border-color:var(--ink);}
+.btn.primary{background:var(--copper); border-color:var(--copper); color:#FFFFFF;}
+.btn.primary:hover{filter:brightness(1.08); color:#FFFFFF;}
+.counter{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:var(--s0); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-variant-numeric:tabular-nums;}
+
+/* ---------------- the board ---------------- */
+.mapwrap{
+  border:1px solid var(--line); background:var(--surface);
+  overflow-x:auto; overflow-y:hidden;
+  background-image:radial-gradient(circle, var(--dots) 1px, transparent 1px);
+  background-size:26px 26px;
+}
+.mapwrap svg{display:block; width:1560px; height:auto;}
+
+.trace-base{fill:none; stroke:var(--trace); stroke-width:7; stroke-linecap:round;}
+.trace-lit{fill:none; stroke:var(--copper); stroke-width:7; stroke-linecap:round; transition:stroke-dashoffset .55s cubic-bezier(.4,.5,.2,1);}
+.trace-future{fill:none; stroke:var(--trace); stroke-width:7; stroke-linecap:round; stroke-dasharray:2 16;}
+.arrowcap{fill:none; stroke:var(--trace); stroke-width:7; stroke-linecap:round; stroke-linejoin:round;}
+
+.viapad .outer{fill:var(--pad); stroke:var(--trace); stroke-width:3.5; transition:stroke .35s ease;}
+.viapad .inner{fill:var(--trace); transition:fill .35s ease;}
+.viapad.lit .outer{stroke:var(--copper);}
+.viapad.lit .inner{fill:var(--copper);}
+.vialbl{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em; fill:var(--muted);}
+
+.stop{cursor:pointer;}
+.stop .ring{fill:var(--pad); stroke-width:3.5; transition:stroke-width .2s ease;}
+.stop .halo{fill:none; stroke-width:2; opacity:0; transition:opacity .2s ease;}
+.stop .via{fill:var(--board); transition:fill .2s ease;}
+.stop .idx{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; fill:var(--muted); letter-spacing:.04em;}
+.stop[data-k="edu"]  .ring, .stop[data-k="edu"]  .halo{stroke:var(--solder);}
+.stop[data-k="eng"]  .ring, .stop[data-k="eng"]  .halo{stroke:var(--copper);}
+.stop[data-k="ven"]  .ring, .stop[data-k="ven"]  .halo{stroke:var(--venture);}
+.stop[data-k="life"] .ring, .stop[data-k="life"] .halo{stroke:var(--life);}
+.stop:hover .ring{stroke-width:5;}
+.stop.on .ring{stroke-width:6;}
+.stop.on .halo{opacity:.4;}
+.stop.on .idx{fill:var(--ink);}
+.stop.done .via{fill:var(--copper);}
+
+.stop .date{font-family:"IBM Plex Mono",monospace; font-size:13px; letter-spacing:.09em; fill:var(--copper);}
+.stop .ttl{font-family:"Sora",sans-serif; font-weight:600; font-size:19px; letter-spacing:-.015em; fill:var(--ink);}
+.stop .sub{font-family:"IBM Plex Sans",sans-serif; font-size:13.5px; fill:var(--muted);}
+.stop.on .ttl{fill:var(--copper-lit);}
+
+.endcap{font-family:"IBM Plex Mono",monospace; font-size:13px; letter-spacing:.14em; fill:var(--muted);}
+.boardnote{font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.18em; fill:var(--muted); opacity:.7;}
+
+.scrollhint{
+  display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  padding:9px 2px 0; font-family:"IBM Plex Mono",monospace; font-size:10px;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--muted);
+}
+
+/* ---------------- detail ---------------- */
+.detail{
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+  gap:0; margin-top:clamp(16px,2.4vw,26px);
+  border:1px solid var(--line); background:var(--surface);
+}
+@media (max-width:900px){ .detail{grid-template-columns:1fr;} }
+.detail.nophoto{grid-template-columns:1fr;}
+.shots[hidden]{display:none;}
+.detail .txt{padding:clamp(20px,2.6vw,30px);}
+.detail .kicker{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
+.detail .kicker .n{font-family:"IBM Plex Mono",monospace; font-size:var(--s0); letter-spacing:.15em; color:var(--muted);}
+.tagk{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.13em; text-transform:uppercase; padding:3px 8px; border:1px solid currentColor;}
+.tagk.edu{color:var(--solder);} .tagk.eng{color:var(--copper);}
+.tagk.ven{color:var(--venture);} .tagk.life{color:var(--life);}
+.detail h2{font-family:"Sora",sans-serif; font-weight:800; font-size:var(--s5); letter-spacing:-.03em; margin:0 0 4px; text-wrap:balance;}
+.detail .when{margin:0 0 16px; font-family:"IBM Plex Mono",monospace; font-size:var(--s1); color:var(--muted); letter-spacing:.05em;}
+.detail p{margin:0 0 14px; color:var(--muted); max-width:56ch;}
+.detail p b{color:var(--ink); font-weight:600;}
+.took{border-left:2px solid var(--copper); padding:2px 0 2px 14px; margin-top:18px;}
+.took .lb{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--copper); display:block; margin-bottom:5px;}
+.took p{margin:0; color:var(--ink); font-size:var(--s2);}
+.chips{display:flex; flex-wrap:wrap; gap:5px; margin-top:18px;}
+.chips span{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.06em; padding:3px 8px; background:var(--sunk); color:var(--muted);}
+
+.shots{padding:clamp(20px,2.6vw,30px); border-left:1px solid var(--line); display:grid; gap:10px; align-content:start;}
+@media (max-width:900px){ .shots{border-left:0; border-top:1px solid var(--line);} }
+.shots .sh{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; gap:10px;}
+.frames{display:grid; gap:10px; grid-template-columns:1fr;}
+figure.f{margin:0; border:1px solid var(--line); background:var(--sunk); overflow:hidden;}
+figure.f.big{grid-column:1 / -1;}
+figure.f .box{
+  aspect-ratio:16/10; display:grid; place-items:center; position:relative; overflow:hidden;
+  background:
+    repeating-linear-gradient(45deg, var(--hatch) 0 10px, transparent 10px 20px),
+    linear-gradient(140deg, var(--wash-a), var(--wash-b));
+}
+figure.f.big .box{aspect-ratio:4/3;}
+figure.f .box img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 32%; display:block;}
+figure.f .box span{
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muted);
+  background:var(--surface); padding:4px 9px; border:1px solid var(--line);
+}
+figure.f figcaption{padding:8px 10px; font-size:var(--s1); color:var(--muted); font-family:"IBM Plex Mono",monospace; letter-spacing:.02em;}
+
+.stepnav{display:flex; justify-content:space-between; gap:10px; grid-column:1 / -1; border-top:1px solid var(--line); padding:12px clamp(20px,2.6vw,30px);}
+.stepnav button{background:transparent; border:0; cursor:pointer; color:var(--ink); font-family:"IBM Plex Mono",monospace; font-size:var(--s0); letter-spacing:.13em; text-transform:uppercase;}
+.stepnav button:hover{color:var(--copper-lit);}
+.stepnav button:disabled{color:var(--muted); opacity:.5; cursor:default;}
+
+footer{border-top:1px solid var(--line); margin-top:clamp(26px,4vw,54px); padding-block:26px 48px; display:flex; flex-wrap:wrap; gap:14px 26px; justify-content:space-between; align-items:center;}
+.flinks{display:flex; flex-wrap:wrap; gap:8px 20px;}
+.flinks a{font-family:"IBM Plex Mono",monospace; font-size:var(--s0); letter-spacing:.13em; text-transform:uppercase; color:var(--ink); text-decoration:none; border-bottom:1px solid var(--line); padding-bottom:3px;}
+.flinks a:hover{color:var(--copper-lit); border-color:var(--copper-lit);}
+footer p{margin:0; font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);}
+
+@media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important;} }
+
+/* ============ site chrome ============ */
+.nav{
+  position:sticky; top:0; z-index:40;
+  display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  padding-block:14px; border-bottom:1px solid var(--line);
+  background:var(--board);
+}
+.nav .mark{margin:0; font-family:"IBM Plex Mono",monospace; font-size:var(--s1); letter-spacing:.2em; text-transform:uppercase; font-weight:600;}
+.navlinks{display:flex; gap:6px 22px; flex-wrap:wrap; align-items:center;}
+.navlinks a{
+  font-family:"IBM Plex Mono",monospace; font-size:var(--s0); letter-spacing:.13em;
+  text-transform:uppercase; color:var(--muted); text-decoration:none;
+}
+.navlinks a:hover{color:var(--copper-lit);}
+
+.hero{padding-block:clamp(44px,7vw,96px) clamp(30px,4vw,54px);}
+.hero h1{
+  font-family:"Sora",sans-serif; font-weight:800;
+  font-size:clamp(2.8rem,8vw,5.5rem); line-height:.94; letter-spacing:-.045em;
+  margin:14px 0 0; max-width:12ch;
+}
+.hero .lede{margin:24px 0 0; color:var(--muted); max-width:56ch; font-size:clamp(1.125rem,2vw,1.5rem); line-height:1.4;}
+.hero .lede b{color:var(--ink); font-weight:600;}
+.herofacts{
+  display:grid; gap:1px; background:var(--line); border:1px solid var(--line);
+  grid-template-columns:repeat(4,minmax(0,1fr)); margin-top:clamp(28px,4vw,46px);
+}
+@media (max-width:760px){ .herofacts{grid-template-columns:repeat(2,minmax(0,1fr));} }
+.herofacts div{background:var(--board); padding:16px;}
+.herofacts dt{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:7px;}
+.herofacts dd{margin:0; font-family:"Sora",sans-serif; font-weight:600; font-size:var(--s4); letter-spacing:-.02em; line-height:1.2;}
+.herofacts dd em{display:block; font-style:normal; font-family:"IBM Plex Sans",sans-serif; font-weight:400; font-size:var(--s2); color:var(--muted); margin-top:4px; letter-spacing:0;}
+.herocta{display:flex; flex-wrap:wrap; gap:9px; margin-top:26px;}
+.herocta a{
+  font-family:"IBM Plex Mono",monospace; font-size:var(--s0); letter-spacing:.13em;
+  text-transform:uppercase; text-decoration:none; padding:11px 16px;
+  border:1px solid var(--line); color:var(--ink);
+}
+.herocta a:hover{border-color:var(--copper); color:var(--copper-lit);}
+.herocta a.solid{background:var(--copper); border-color:var(--copper); color:#FFFFFF;}
+.herocta a.solid:hover{filter:brightness(1.08); color:#FFFFFF;}
+.dotnow{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--venture); margin-right:8px; vertical-align:baseline;}
+
+/* ============ section scaffold ============ */
+section.band{padding-block:clamp(44px,6vw,86px); border-top:1px solid var(--line);}
+.bandhead{display:grid; gap:clamp(12px,2vw,34px); grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); align-items:end; margin-bottom:clamp(22px,3vw,36px);}
+@media (max-width:900px){ .bandhead{grid-template-columns:1fr; align-items:start;} }
+.bandhead h2{font-family:"Sora",sans-serif; font-weight:800; font-size:clamp(1.9rem,4vw,3rem); letter-spacing:-.035em; margin:10px 0 0; text-wrap:balance;}
+.bandhead p.blurb{margin:14px 0 0; color:var(--muted); max-width:52ch; font-size:var(--s4); line-height:1.45;}
+
+/* ============ work ============ */
+.work{display:grid; gap:0; border-top:1px solid var(--line);}
+.wrow{
+  display:grid; grid-template-columns:minmax(0,150px) minmax(0,1.1fr) minmax(0,1.3fr);
+  gap:clamp(10px,2.4vw,36px); padding-block:clamp(20px,2.6vw,30px);
+  border-bottom:1px solid var(--line); align-items:start;
+}
+@media (max-width:860px){ .wrow{grid-template-columns:1fr; gap:10px;} }
+.wrow .meta{font-family:"IBM Plex Mono",monospace; font-size:var(--s0); letter-spacing:.1em; color:var(--muted);}
+.wrow .meta b{display:block; color:var(--copper); font-weight:500; margin-bottom:5px;}
+.wrow h3{font-family:"Sora",sans-serif; font-weight:600; font-size:var(--s4); letter-spacing:-.02em; margin:0 0 8px;}
+.wrow p{margin:0; color:var(--muted); max-width:62ch;}
+.wrow p b{color:var(--ink); font-weight:600;}
+.wrow .tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:14px;}
+.wrow .tags span{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.06em; padding:3px 8px; background:var(--sunk); color:var(--muted);}
+
+/* ============ vaquxy ============ */
+.vq{border:1px solid var(--venture); display:grid; grid-template-columns:1fr;}
+.vq .vqtxt{
+  padding:clamp(22px,3vw,38px);
+  display:grid; gap:clamp(18px,4vw,56px);
+  grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); align-items:start;
+}
+@media (max-width:860px){ .vq .vqtxt{grid-template-columns:1fr;} }
+.vqbody p:first-child{margin-top:0;}
+.vq .eyebrow{color:var(--venture);}
+.vq h2{font-family:"Sora",sans-serif; font-weight:800; font-size:clamp(1.9rem,4vw,2.8rem); letter-spacing:-.035em; margin:12px 0 0;}
+.vq .meaning{margin:10px 0 0; font-family:"IBM Plex Mono",monospace; font-size:var(--s2); letter-spacing:.08em; text-transform:uppercase; color:var(--venture);}
+.vq p{margin:18px 0 0; color:var(--muted); max-width:58ch;}
+.vq p b{color:var(--ink); font-weight:600;}
+/* ============ stack ============ */
+.stackwrap{overflow-x:auto; border:1px solid var(--line);}
+table.stack{border-collapse:collapse; width:100%; min-width:540px; background:var(--surface);}
+table.stack th, table.stack td{text-align:left; padding:11px 15px; border-bottom:1px solid var(--line); font-size:var(--s2);}
+table.stack th{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); font-weight:500; background:var(--sunk);}
+table.stack td:first-child{font-family:"IBM Plex Mono",monospace; font-size:var(--s1); color:var(--muted); white-space:nowrap;}
+table.stack tbody tr:last-child td{border-bottom:0;}
+
+/* ============ contact ============ */
+.contact{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(20px,4vw,56px); align-items:start;}
+@media (max-width:860px){ .contact{grid-template-columns:1fr;} }
+.contact h2{font-family:"Sora",sans-serif; font-weight:800; font-size:clamp(2rem,5vw,3.4rem); letter-spacing:-.04em; margin:12px 0 0; max-width:14ch;}
+.contact p{margin:18px 0 0; color:var(--muted); max-width:46ch;}
+.clist{display:grid; gap:0; border-top:1px solid var(--line);}
+.clist a{
+  display:grid; grid-template-columns:minmax(80px,10ch) minmax(0,1fr) auto; gap:14px;
+  padding-block:15px; border-bottom:1px solid var(--line);
+  text-decoration:none; color:var(--ink); align-items:baseline;
+}
+.clist a:hover{color:var(--copper-lit);}
+.clist .k{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted);}
+.clist .v{font-size:var(--s3);}
+.clist .go{font-family:"IBM Plex Mono",monospace; font-size:var(--s0); color:var(--muted);}
+</style>
+
+<div class="wrap">
+
+  <nav class="nav">
+    <p class="mark">Olu Olugbemi</p>
+    <div class="navlinks">
+      <a href="#route">Route</a>
+      <a href="#work">Work</a>
+      <a href="#vaquxy">Vaquxy</a>
+      <a href="#stack">Stack</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <h1>Olu Olugbemi</h1>
+    <p class="lede">Software engineer who also runs a clothing company. Both jobs are the
+       same job: <b>find the constraint, measure it, remove it, ship</b> — then measure again.</p>
+    <dl class="herofacts">
+      <div><dt>Degree</dt><dd>B.S. Computer Science<em>UTSA · magna cum laude · 3.85</em></dd></div>
+      <div><dt>Last role</dt><dd>Visa<em>SWE intern, summer 2025</em></dd></div>
+      <div><dt>Also</dt><dd>Co-founder, Vaquxy<em>Vintage streetwear, handcrafted</em></dd></div>
+      <div><dt>Based</dt><dd>Texas<em>Open to relocation</em></dd></div>
+    </dl>
+    <div class="herocta">
+      <a class="solid" href="#contact">Get in touch</a>
+      <a data-link="github">GitHub</a>
+      <a href="#route">See the route ↓</a>
+    </div>
+  </header>
+
+  <section class="band" id="route" style="border-top:0; padding-bottom:0;">
+    <div class="bandhead">
+      <div>
+        <p class="eyebrow">01 — Where this came from</p>
+        <h2>The route so far.</h2>
+        <p class="blurb">Twenty-one years, two continents, ten stops — every row reads left to
+           right, oldest to newest. Click any via and the copper lights up to it.</p>
+      </div>
+      <div class="legend">
+        <span class="lh">Layer key</span>
+        <div class="row l"><i></i><span>Life — where I actually come from</span></div>
+        <div class="row e"><i></i><span>School — the structure underneath</span></div>
+        <div class="row g"><i></i><span>Engineering — what I built or hardened</span></div>
+        <div class="row v"><i></i><span>Venture — the company I run</span></div>
+      </div>
+    </div>
+
+  <div class="controls">
+    <button class="btn primary" id="play">▶ Play the route</button>
+    <button class="btn" id="theme">Theme</button>
+    <span class="counter" id="counter">Stop 01 / 10</span>
+  </div>
+
+  <div class="mapwrap" id="mapwrap">
+    <svg viewBox="0 0 1720 800" role="group" aria-label="Career route map with ten stops in date order">
+
+      <!-- ===== row traces ===== -->
+      <path class="trace-base" d="M110,140 H1420"/>
+      <path class="trace-lit" id="lit0" d="M110,140 H1420"/>
+      <path class="trace-base" d="M110,400 H1420"/>
+      <path class="trace-lit" id="lit1" d="M110,400 H1420"/>
+      <path class="trace-base" d="M110,700 H1100"/>
+      <path class="trace-lit" id="lit2" d="M110,700 H1100"/>
+      <path class="trace-future" d="M1100,700 H1516"/>
+      <path class="arrowcap" d="M1500,684 L1530,700 L1500,716"/>
+      <text class="endcap" x="1316" y="748">NEXT STOP →</text>
+
+      <!-- origin terminal -->
+      <circle cx="70" cy="140" r="8" fill="var(--copper)"/>
+      <text class="boardnote" x="40" y="112">ORIGIN</text>
+
+      <!-- ===== vias between rows ===== -->
+      <g class="viapad" id="v1a"><circle class="outer" cx="1460" cy="140" r="13"/><circle class="inner" cx="1460" cy="140" r="5"/></g>
+      <text class="vialbl" x="1460" y="176" text-anchor="middle">V1 ▾</text>
+      <g class="viapad" id="v1b"><circle class="outer" cx="70" cy="400" r="13"/><circle class="inner" cx="70" cy="400" r="5"/></g>
+      <text class="vialbl" x="70" y="372" text-anchor="middle">▾ V1</text>
+
+      <g class="viapad" id="v2a"><circle class="outer" cx="1460" cy="400" r="13"/><circle class="inner" cx="1460" cy="400" r="5"/></g>
+      <text class="vialbl" x="1460" y="436" text-anchor="middle">V2 ▾</text>
+      <g class="viapad" id="v2b"><circle class="outer" cx="70" cy="700" r="13"/><circle class="inner" cx="70" cy="700" r="5"/></g>
+      <text class="vialbl" x="70" y="672" text-anchor="middle">▾ V2</text>
+
+      <!-- ========== ROW 1 — 2005 to 2022 ========== -->
+      <g class="stop on" data-i="0" data-k="life" tabindex="0" role="button" aria-label="Stop 1, born in Houston">
+        <rect class="hit" x="148" y="108" width="336" height="150" fill="none" pointer-events="all"/>
+        <circle class="halo" cx="180" cy="140" r="26"/>
+        <circle class="via" cx="180" cy="140" r="9"/>
+        <circle class="ring" cx="180" cy="140" r="19"/>
+        <text class="idx" x="180" y="140" text-anchor="middle" dy=".36em">01</text>
+        <text class="date" x="180" y="196">FEB 2005</text>
+        <text class="ttl"  x="180" y="222">Born in Houston</text>
+        <text class="sub"  x="180" y="244">Texas, United States</text>
+      </g>
+
+      <g class="stop" data-i="1" data-k="life" tabindex="0" role="button" aria-label="Stop 2, thirteen years in Nigeria">
+        <rect class="hit" x="498" y="108" width="336" height="150" fill="none" pointer-events="all"/>
+        <circle class="halo" cx="530" cy="140" r="26"/>
+        <circle class="via" cx="530" cy="140" r="9"/>
+        <circle class="ring" cx="530" cy="140" r="19"/>
+        <text class="idx" x="530" y="140" text-anchor="middle" dy=".36em">02</text>
+        <text class="date" x="530" y="196">2006 – 2019</text>
+        <text class="ttl"  x="530" y="222">Thirteen years in Nigeria</text>
+        <text class="sub"  x="530" y="244">One to fourteen years old —</text>
+        <text class="sub"  x="530" y="262">where the work ethic came from</text>
+      </g>
+
+      <g class="stop" data-i="2" data-k="edu" tabindex="0" role="button" aria-label="Stop 3, high school in Texas">
+        <rect class="hit" x="848" y="108" width="336" height="150" fill="none" pointer-events="all"/>
+        <circle class="halo" cx="880" cy="140" r="26"/>
+        <circle class="via" cx="880" cy="140" r="9"/>
+        <circle class="ring" cx="880" cy="140" r="19"/>
+        <text class="idx" x="880" y="140" text-anchor="middle" dy=".36em">03</text>
+        <text class="date" x="880" y="196">2019 – 2022</text>
+        <text class="ttl"  x="880" y="222">High school, back in Texas</text>
+        <text class="sub"  x="880" y="244">Learning a country I was born</text>
+        <text class="sub"  x="880" y="262">in but had never lived in</text>
+      </g>
+
+      <g class="stop" data-i="3" data-k="edu" tabindex="0" role="button" aria-label="Stop 4, UTSA">
+        <rect class="hit" x="1188" y="108" width="336" height="150" fill="none" pointer-events="all"/>
+        <circle class="halo" cx="1220" cy="140" r="26"/>
+        <circle class="via" cx="1220" cy="140" r="9"/>
+        <circle class="ring" cx="1220" cy="140" r="19"/>
+        <text class="idx" x="1220" y="140" text-anchor="middle" dy=".36em">04</text>
+        <text class="date" x="1220" y="196">AUG 2022</text>
+        <text class="ttl"  x="1220" y="222">UTSA, Computer Science</text>
+        <text class="sub"  x="1220" y="244">Four years, San Antonio,</text>
+        <text class="sub"  x="1220" y="262">no repos on day one</text>
+      </g>
+
+      <!-- ========== ROW 2 — 2023 to 2025 ========== -->
+      <g class="stop" data-i="4" data-k="eng" tabindex="0" role="button" aria-label="Stop 5, data and research intern">
+        <rect class="hit" x="148" y="368" width="336" height="150" fill="none" pointer-events="all"/>
+        <circle class="halo" cx="180" cy="400" r="26"/>
+        <circle class="via" cx="180" cy="400" r="9"/>
+        <circle class="ring" cx="180" cy="400" r="19"/>
+        <text class="idx" x="180" y="400" text-anchor="middle" dy=".36em">05</text>
+        <text class="date" x="180" y="456">MAY – JUL 2023</text>
+        <text class="ttl"  x="180" y="482">Data &amp; Research Intern</text>
+        <text class="sub"  x="180" y="504">First job where the output</text>
+        <text class="sub"  x="180" y="522">was a dataset, not a grade</text>
+      </g>
+
+      <g class="stop" data-i="5" data-k="eng" tabindex="0" role="button" aria-label="Stop 6, Centific">
+        <rect class="hit" x="588" y="368" width="336" height="150" fill="none" pointer-events="all"/>
+        <circle class="halo" cx="620" cy="400" r="26"/>
+        <circle class="via" cx="620" cy="400" r="9"/>
+        <circle class="ring" cx="620" cy="400" r="19"/>
+        <text class="idx" x="620" y="400" text-anchor="middle" dy=".36em">06</text>
+        <text class="date" x="620" y="456">OCT 2024 – APR 2025</text>
+        <text class="ttl"  x="620" y="482">Centific — AI Data Analyst</text>
+        <text class="sub"  x="620" y="504">Annotation and quality on the</text>
+        <text class="sub"  x="620" y="522">data models actually learn from</text>
+      </g>
+
+      <g class="stop" data-i="6" data-k="ven" tabindex="0" role="button" aria-label="Stop 7, Vaquxy founded">
+        <rect class="hit" x="1028" y="368" width="336" height="150" fill="none" pointer-events="all"/>
+        <circle class="halo" cx="1060" cy="400" r="26"/>
+        <circle class="via" cx="1060" cy="400" r="9"/>
+        <circle class="ring" cx="1060" cy="400" r="19"/>
+        <text class="idx" x="1060" y="400" text-anchor="middle" dy=".36em">07</text>
+        <text class="date" x="1060" y="456">JAN 2025</text>
+        <text class="ttl"  x="1060" y="482">Vaquxy, co-founded</text>
+        <text class="sub"  x="1060" y="504">Born from pressure — vintage</text>
+        <text class="sub"  x="1060" y="522">streetwear, handcrafted</text>
+      </g>
+
+      <!-- ========== ROW 3 — 2025 to now ========== -->
+      <g class="stop" data-i="7" data-k="eng" tabindex="0" role="button" aria-label="Stop 8, Visa internship">
+        <rect class="hit" x="148" y="582" width="336" height="152" fill="none" pointer-events="all"/>
+        <circle class="halo" cx="180" cy="700" r="26"/>
+        <circle class="via" cx="180" cy="700" r="9"/>
+        <circle class="ring" cx="180" cy="700" r="19"/>
+        <text class="idx" x="180" y="700" text-anchor="middle" dy=".36em">08</text>
+        <text class="date" x="180" y="604">JUN – AUG 2025</text>
+        <text class="ttl"  x="180" y="630">Visa — SWE Intern</text>
+        <text class="sub"  x="180" y="652">Security automation across</text>
+        <text class="sub"  x="180" y="670">50+ microservices</text>
+      </g>
+
+      <g class="stop" data-i="8" data-k="edu" tabindex="0" role="button" aria-label="Stop 9, graduated magna cum laude">
+        <rect class="hit" x="588" y="582" width="336" height="152" fill="none" pointer-events="all"/>
+        <circle class="halo" cx="620" cy="700" r="26"/>
+        <circle class="via" cx="620" cy="700" r="9"/>
+        <circle class="ring" cx="620" cy="700" r="19"/>
+        <text class="idx" x="620" y="700" text-anchor="middle" dy=".36em">09</text>
+        <text class="date" x="620" y="604">MAY 2026</text>
+        <text class="ttl"  x="620" y="630">Graduated magna cum laude</text>
+        <text class="sub"  x="620" y="652">3.85 · Distinguished Student ·</text>
+        <text class="sub"  x="620" y="670">President’s List · Reboot Scholar</text>
+      </g>
+
+      <g class="stop" data-i="9" data-k="eng" tabindex="0" role="button" aria-label="Stop 10, now">
+        <rect class="hit" x="1028" y="582" width="336" height="152" fill="none" pointer-events="all"/>
+        <circle class="halo" cx="1060" cy="700" r="26"/>
+        <circle class="via" cx="1060" cy="700" r="9"/>
+        <circle class="ring" cx="1060" cy="700" r="19"/>
+        <text class="idx" x="1060" y="700" text-anchor="middle" dy=".36em">10</text>
+        <text class="date" x="1060" y="604">NOW</text>
+        <text class="ttl"  x="1060" y="630">Looking for the next team</text>
+        <text class="sub"  x="1060" y="652">Building tooling, shipping</text>
+        <text class="sub"  x="1060" y="670">Vaquxy, interviewing</text>
+      </g>
+
+      <text class="boardnote" x="40" y="772">ROUTE OLU · 10 STOPS · 2005 → NOW · ROWS LINKED THROUGH VIAS V1 AND V2</text>
+    </svg>
+  </div>
+  <div class="scrollhint">
+    <span>Each row runs left to right · rows link through vias V1 and V2</span>
+    <span>← → to step · Enter to open</span>
+  </div>
+
+  <!-- ================= DETAIL ================= -->
+  <section class="detail">
+    <div class="txt">
+      <div class="kicker">
+        <span class="n" id="dn">STOP 01 / 10</span>
+        <span class="tagk life" id="dk">Life</span>
+      </div>
+      <h2 id="dt">—</h2>
+      <p class="when" id="dw">—</p>
+      <div id="dbody"></div>
+      <div class="took"><span class="lb">What I took from it</span><p id="dtook">—</p></div>
+      <div class="chips" id="dchips"></div>
+    </div>
+
+    <div class="shots">
+      <div class="sh"><span>Photograph</span><span id="dcount">1 frame</span></div>
+      <div class="frames" id="dframes"></div>
+    </div>
+
+    <div class="stepnav">
+      <button id="prev">← Previous stop</button>
+      <button id="next">Next stop →</button>
+    </div>
+  </section>
+
+  </section>
+
+  <!-- ================= WORK ================= -->
+  <section class="band" id="work">
+    <div class="bandhead">
+      <div>
+        <p class="eyebrow">02 — Selected work</p>
+        <h2>Things I built, and what they cost me.</h2>
+        <p class="blurb">Four of them. Each one has a decision in it I can defend, and at
+           least one thing I would do differently.</p>
+      </div>
+    </div>
+
+    <div class="work">
+      <article class="wrow">
+        <div class="meta"><b>JUN – AUG 2025</b>Visa · internship</div>
+        <div>
+          <h3>Security automation across a service fleet</h3>
+          <div class="tags"><span>Python</span><span>Docker</span><span>CI/CD</span><span>Shell</span></div>
+        </div>
+        <p>The assignment was container security. The real problem was that fixing a
+           vulnerability depended on somebody <em>noticing</em> it — so I automated Docker image
+           remediation across <b>50+ microservices</b> and moved the scans into CI/CD, where a
+           regression fails the build instead of waiting on review. Then I wrote the runbook,
+           so the automation outlived the internship.</p>
+      </article>
+
+      <article class="wrow">
+        <div class="meta"><b>2024</b>Personal · full stack</div>
+        <div>
+          <h3>Commerce platform, end to end</h3>
+          <div class="tags"><span>React</span><span>Spring Boot</span><span>PostgreSQL</span><span>Docker</span><span>AWS EC2</span></div>
+        </div>
+        <p>Catalog, cart, checkout and an admin surface. React on the front, Spring Boot
+           services behind it, <b>PostgreSQL with real constraints</b> rather than validation
+           bolted onto the app layer, containerised onto EC2. I built it because I was already
+           paying a platform to run a storefront and wanted to know what happened under the button.</p>
+      </article>
+
+      <article class="wrow">
+        <div class="meta"><b>OCT 2024 – APR 2025</b>Centific</div>
+        <div>
+          <h3>Inside the training data</h3>
+          <div class="tags"><span>Annotation</span><span>QA</span><span>Guidelines</span><span>LLM data</span></div>
+        </div>
+        <p>Six months labelling and quality-checking the data models learn from — looking
+           directly at the thing most people treat as a black box. Model behaviour is downstream
+           of annotation guidelines, and <b>an ambiguous guideline produces an ambiguous model</b>.
+           Every argument about AI output is really an argument about labels somebody wrote.</p>
+      </article>
+
+      <article class="wrow">
+        <div class="meta"><b>2026</b>Coursework · vision</div>
+        <div>
+          <h3>Camera calibration by direct linear transform</h3>
+          <div class="tags"><span>Python</span><span>NumPy</span><span>OpenCV</span></div>
+        </div>
+        <p>Solved the projection matrix from point correspondences, then measured
+           reprojection error back against the original image plane — because a calibration you
+           have not reprojected is a calibration you are taking on faith.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ================= VAQUXY ================= -->
+  <section class="band" id="vaquxy">
+    <div class="vq">
+      <div class="vqtxt">
+        <div class="vqhead">
+          <p class="eyebrow">03 — The company</p>
+          <h2>Vaquxy</h2>
+          <p class="meaning">Born from pressure</p>
+        </div>
+        <div class="vqbody">
+        <p>Vintage streetwear, handcrafted — pieces cut, washed and finished by hand rather
+           than pulled off a catalogue, so no two carry their wear the same way. I co-founded it
+           and run the build side.</p>
+        <p>I own sourcing, pricing, inventory and every dollar of paid acquisition. Creative
+           written, shot and cut in house, then tested daily against a CPA floor.</p>
+        <p><b>I read a funnel the way I read a stack trace</b> — find where it drops,
+           instrument it, fix it, re-measure. It is the same job as the engineering, with money
+           as the test suite.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= STACK ================= -->
+  <section class="band" id="stack">
+    <div class="bandhead">
+      <div>
+        <p class="eyebrow">04 — What I reach for</p>
+        <h2>The stack, honestly rated.</h2>
+        <p class="blurb">Depth is measured against what I have shipped, not what I have read about.</p>
+      </div>
+    </div>
+    <div class="stackwrap">
+      <table class="stack">
+        <thead><tr><th scope="col">Layer</th><th scope="col">Tools</th><th scope="col">Where it was used</th></tr></thead>
+        <tbody>
+          <tr><td>backend</td><td>Java · Spring Boot · Python · REST</td><td>Commerce platform · Visa tooling</td></tr>
+          <tr><td>data</td><td>PostgreSQL · SQL · schema design · query tuning</td><td>Commerce platform · database systems</td></tr>
+          <tr><td>infra</td><td>Docker · AWS EC2 · CI/CD pipelines</td><td>Visa · personal deploys</td></tr>
+          <tr><td>frontend</td><td>TypeScript · React · HTML/CSS</td><td>Commerce platform · Vaquxy storefront</td></tr>
+          <tr><td>mobile</td><td>Swift · SwiftUI · async/await</td><td>Catalog app</td></tr>
+          <tr><td>security</td><td>Container scanning · MITRE ATT&amp;CK</td><td>Visa · red-team labs</td></tr>
+          <tr><td>ml data</td><td>Annotation · QA · guideline design</td><td>Centific</td></tr>
+          <tr><td>growth</td><td>Meta Ads · Shopify · Omnisend · unit economics</td><td>Vaquxy</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= CONTACT ================= -->
+  <section class="band" id="contact">
+    <div class="contact">
+      <div>
+        <p class="eyebrow">05 — Next stop</p>
+        <h2>Let's talk.</h2>
+        <p>I'm looking for a new-grad software engineering role — backend, platform or iOS —
+           on a team that ships often and is honest about what is working. Based in Texas,
+           open to relocation. Email is fastest.</p>
+      </div>
+      <div class="clist">
+        <a data-link="email"><span class="k">Email</span><span class="v" data-label></span><span class="go">→</span></a>
+        <a data-link="github"><span class="k">GitHub</span><span class="v" data-label></span><span class="go">→</span></a>
+        <a data-link="linkedin"><span class="k">LinkedIn</span><span class="v" data-label></span><span class="go">→</span></a>
+        <a data-link="vaquxy"><span class="k">Vaquxy</span><span class="v" data-label></span><span class="go">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="flinks">
+      <a data-link="email">Email</a><a data-link="github">GitHub</a><a data-link="linkedin">LinkedIn</a><a data-link="vaquxy">Vaquxy</a>
+    </div>
+    <p>© 2026 Olu Olugbemi · Texas · built and maintained by me</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* =========================================================================
+     EDIT HERE — every link on the page comes from this one object.
+     Leave a value as an empty string and that link is hidden everywhere
+     instead of shipping a dead '#'.
+     ========================================================================= */
+  var SITE = {
+    email:    'funsoolugbemi@icloud.com',
+    github:   'https://github.com/Funshhy',
+    linkedin: 'https://www.linkedin.com/in/oolugbemi/',
+    vaquxy:   'https://www.vaquxy.com'
+  };
+
+  /* pretty text shown in the contact list */
+  var LABEL = {
+    email:    SITE.email,
+    github:   SITE.github.replace(/^https?:\/\//, ''),
+    linkedin: SITE.linkedin.replace(/^https?:\/\//, ''),
+    vaquxy:   SITE.vaquxy.replace(/^https?:\/\//, '')
+  };
+
+  [].slice.call(document.querySelectorAll('[data-link]')).forEach(function(a){
+    var key = a.getAttribute('data-link');
+    var url = SITE[key];
+    if (!url){ a.hidden = true; return; }
+    a.href = (key === 'email') ? 'mailto:' + url : url;
+    if (key !== 'email'){ a.target = '_blank'; a.rel = 'noopener'; }
+    var label = a.querySelector('[data-label]');
+    if (label) label.textContent = LABEL[key] || url;
+  });
+
+  var root = document.documentElement, tb = document.getElementById('theme'), ts = 0, tn = ['Theme','Light','Dark'];
+  tb.addEventListener('click', function(){
+    ts = (ts + 1) % 3;
+    if (ts === 0) root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', ts === 1 ? 'light' : 'dark');
+    tb.textContent = tn[ts];
+  });
+
+  var KIND = {edu:'School', eng:'Engineering', ven:'Venture', life:'Life'};
+
+  /* board geometry, precomputed — nothing is measured at runtime */
+  var ROW   = [0,0,0,0, 1,1,1, 2,2,2];
+  var CX    = [180,530,880,1220, 180,620,1060, 180,620,1060];
+  var X0    = 110;
+  var ROWLEN = [1310, 1310, 990];
+
+  /* Each stop's `shots` are [size, caption, imageUrl].
+     Every slot already points at a filename inside an `images/` folder sitting
+     beside this page. Save a photo under that exact name and it appears — there
+     is no code to edit. Any file that is missing falls back to the placeholder. */
+  var D = [
+    { t:'Born in Houston', w:'February 2005 · Houston, Texas', k:'life',
+      body:'<p>Born in Houston in February 2005. I did not stay long — the next thirteen years happened on a different continent — but the passport and the city I eventually came back to are both from here.</p>'
+        +'<p>Texas is where the story starts and where it is currently being written. The middle is somewhere else entirely.</p>',
+      took:'Where you start is an accident. What you do with it is not.',
+      chips:['Houston, TX','Feb 2005'],
+      shots:[['big','Earliest photo','images/01.jpg']] },
+
+    { t:'Thirteen years in Nigeria', w:'2006 – 2019 · One to fourteen years old', k:'life',
+      body:'<p>Thirteen years in Nigeria, from one to fourteen. School there does not ease you in — you are ranked, publicly, against everyone in your year, every single term. That is where I learned to work before I learned to enjoy working.</p>'
+        +'<p>It also gave me the assumption I still run on: if something is not working, the answer is usually more attempts, not a different plan.</p>',
+      took:'Comfort and progress are not the same thing. I learned that early and it stuck.',
+      chips:['Nigeria','13 years','Two continents'],
+      shots:[['big','Home in Nigeria','images/02.jpg']] },
+
+    { t:'High school, back in Texas', w:'2019 – 2022 · Texas', k:'edu',
+      body:'<p>Back in the United States at fourteen, into an American high school, learning a country I was born in but had never actually lived in. New accent, new system, new everything, all at once.</p>'
+        +'<p>Graduated in 2022 and went straight into computer science — the first subject I had found that rewarded building things over memorising them.</p>',
+      took:'Being the new person is a skill. You get fast at reading a room when you have no choice.',
+      chips:['Texas','Class of 2022','Starting over'],
+      shots:[['big','High school, Texas','images/03.jpg']] },
+
+    { t:'UTSA, Computer Science', w:'August 2022 – May 2026 · San Antonio, Texas', k:'edu',
+      body:'<p>Four years at the University of Texas at San Antonio, B.S. Computer Science. I arrived with no repositories, no internships, and no real sense of how wide the gap was between a lecture and a running service.</p>'
+        +'<p>The plan was simple and it never changed: <b>build things people actually open</b>. Everything after this stop is that plan being executed.</p>',
+      took:'Nobody hands you a problem worth solving. You go and find one.',
+      chips:['UTSA','Computer Science','C++','Java','Python','SQL'],
+      shots:[['big','Campus, first week','images/04.jpg']] },
+
+    { t:'Data & Research Intern', w:'May – July 2023 · Summer internship', k:'eng',
+      body:'<p>My first role where the deliverable was a dataset and a written finding rather than a grade. Collecting it, cleaning it, and reporting on it for somebody downstream who was going to make a decision with it.</p>'
+        +'<p>It taught me to care about provenance — where a number came from and how much of it to trust — which turned out to be the same instinct everything since has run on.</p>',
+      took:'A number without its source is just an opinion wearing a suit.',
+      chips:['Data collection','Research','SQL','Excel','Reporting'],
+      shots:[['big','Workspace, summer 2023','images/05.jpg']] },
+
+    { t:'Centific — AI Data Annotation Analyst', w:'October 2024 – April 2025', k:'eng',
+      body:'<p>Labelling and quality-checking the training data models learn from. Which means spending six months looking directly at the thing most people treat as a black box.</p>'
+        +'<p>You learn fast that model behaviour is downstream of annotation guidelines, and that an ambiguous guideline produces an ambiguous model. Every argument about AI output is really an argument about labels somebody wrote.</p>',
+      took:'A model is only as good as the humans who defined its labels. I have watched that happen from the inside.',
+      chips:['Centific','Data annotation','Quality assurance','Guidelines','LLM training data'],
+      shots:[] },
+
+    { t:'Vaquxy', w:'Co-founder · vintage streetwear, handcrafted', k:'ven',
+      body:'<p><b>Vaquxy means born from pressure.</b> Vintage streetwear, handcrafted — pieces cut, washed and finished by hand rather than pulled off a catalogue, so no two carry their wear the same way.</p>'
+        +'<p>I co-founded it, and I own sourcing, pricing, inventory and every dollar of paid acquisition: creative written, shot and cut in house, then tested daily against a CPA floor.</p>',
+      took:'A number you cannot measure daily is a number you do not control.',
+      chips:['Handcrafted','Vintage','Shopify','Meta Ads','Omnisend','Sourcing','Inventory'],
+      shots:[['big','First production run','images/07.jpg']] },
+
+    { t:'Visa — Software Engineering Intern', w:'June – August 2025', k:'eng',
+      body:'<p>The assignment was container security across a large service fleet. The real problem was that fixing a vulnerability depended on somebody <em>noticing</em> it, so I made the noticing automatic.</p>'
+        +'<p>Automated Docker image vulnerability remediation across <b>50+ microservices</b>, then moved the scans into CI/CD so a regression failed the build instead of waiting on review. Then I wrote the runbook, so the automation outlived the internship.</p>',
+      took:'The durable fix is never the patch. It is the gate that stops the next one.',
+      chips:['Python','Docker','CI/CD','Shell','Vulnerability management'],
+      shots:[['big','First day badge','images/08.jpg']] },
+
+    { t:'Graduated magna cum laude', w:'May 2026 · University of Texas at San Antonio', k:'edu',
+      body:'<p>B.S. Computer Science, <b>magna cum laude</b>, <b>3.85</b> cumulative. Distinguished Student Award, President’s List, honor roll, and the Reboot Scholar Award.</p>'
+        +'<p>Four years, three roles, one company founded, and a stack I can defend line by line. The honors are on the wall; the repositories are the part I would rather talk about.</p>',
+      took:'The degree is the floor, not the story. What you shipped while earning it is the story.',
+      chips:['magna cum laude','3.85 GPA','Distinguished Student','President’s List','Reboot Scholar'],
+      shots:[['big','Graduation day','images/09.jpg']] },
+
+    { t:'Looking for the next team', w:'Now · Texas · open to relocation', k:'eng',
+      body:'<p>Looking for a new-grad software engineering role — backend, platform or iOS — on a team that ships often and is honest about what is working.</p>'
+        +'<p>In the meantime: developer tooling built the way I would want to receive it, spec first and tests before implementation, with numbers that come with an error bar instead of a claim. And Vaquxy still ships.</p>',
+      took:'Ship something measurable, then say exactly what you still do not know about it.',
+      chips:['Java','Spring Boot','Python','Docker','AWS','SwiftUI','PostgreSQL'],
+      shots:[] }
+  ];
+
+  var stops = [].slice.call(document.querySelectorAll('.stop'));
+  var litPaths = [document.getElementById('lit0'), document.getElementById('lit1'), document.getElementById('lit2')];
+  var vias = {
+    1:[document.getElementById('v1a'), document.getElementById('v1b')],
+    2:[document.getElementById('v2a'), document.getElementById('v2b')]
+  };
+  var mapwrap = document.getElementById('mapwrap');
+  var dn = document.getElementById('dn'), dk = document.getElementById('dk'), dt = document.getElementById('dt'),
+      dw = document.getElementById('dw'), dbody = document.getElementById('dbody'), dtook = document.getElementById('dtook'),
+      dchips = document.getElementById('dchips'), dframes = document.getElementById('dframes'),
+      shotsPanel = document.querySelector('.shots'), detailPanel = document.querySelector('.detail'),
+      dcount = document.getElementById('dcount'), counter = document.getElementById('counter');
+  var prevBtn = document.getElementById('prev'), nextBtn = document.getElementById('next');
+  var playBtn = document.getElementById('play');
+  var cur = -1, playing = false, timer = null;
+
+  for (var r = 0; r < litPaths.length; r++){
+    litPaths[r].style.strokeDasharray = ROWLEN[r] + ' ' + ROWLEN[r];
+    litPaths[r].style.strokeDashoffset = ROWLEN[r];
+  }
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function paint(i){
+    var row = ROW[i];
+    for (var r = 0; r < litPaths.length; r++){
+      var shown;
+      if (r < row) shown = ROWLEN[r];
+      else if (r === row) shown = CX[i] - X0;
+      else shown = 0;
+      litPaths[r].style.strokeDashoffset = ROWLEN[r] - shown;
+    }
+    vias[1][0].classList.toggle('lit', row >= 1);
+    vias[1][1].classList.toggle('lit', row >= 1);
+    vias[2][0].classList.toggle('lit', row >= 2);
+    vias[2][1].classList.toggle('lit', row >= 2);
+  }
+
+  function centre(i){
+    var svg = mapwrap.firstElementChild;
+    if (!svg) return;
+    var w = svg.getBoundingClientRect().width;
+    if (!w) return;
+    var left = CX[i] * (w / 1720) - mapwrap.clientWidth / 2;
+    if (left < 0) left = 0;
+    try { mapwrap.scrollTo({left: left, behavior: 'smooth'}); }
+    catch (e) { mapwrap.scrollLeft = left; }
+  }
+
+  function select(i, scroll){
+    if (i < 0 || i >= D.length) return;
+    cur = i;
+    var d = D[i];
+
+    for (var n = 0; n < stops.length; n++){
+      stops[n].classList.toggle('on', n === i);
+      stops[n].classList.toggle('done', n <= i);
+    }
+    paint(i);
+
+    dn.textContent = 'STOP ' + pad(i + 1) + ' / ' + D.length;
+    dk.textContent = KIND[d.k];
+    dk.className = 'tagk ' + d.k;
+    dt.textContent = d.t;
+    dw.textContent = d.w;
+    dbody.innerHTML = d.body;
+    dtook.textContent = d.took;
+    dchips.innerHTML = d.chips.map(function(c){ return '<span>' + c + '</span>'; }).join('');
+    var hasShots = d.shots.length > 0;
+    shotsPanel.hidden = !hasShots;
+    detailPanel.classList.toggle('nophoto', !hasShots);
+    dcount.textContent = d.shots.length + (d.shots.length === 1 ? ' frame' : ' frames');
+    dframes.innerHTML = d.shots.map(function(sh, n){
+      var ph = 'IMG ' + pad(n + 1);
+      var inner = sh[2]
+        ? '<img src="' + sh[2] + '" alt="' + sh[1] + '" loading="lazy"'
+          + ' onerror="this.parentNode.innerHTML=&quot;<span>' + ph + '</span>&quot;">'
+        : '<span>' + ph + '</span>';
+      return '<figure class="f ' + (sh[0] === 'big' ? 'big' : '') + '">'
+           + '<div class="box">' + inner + '</div>'
+           + '<figcaption>' + sh[1] + '</figcaption></figure>';
+    }).join('');
+    counter.textContent = 'Stop ' + pad(i + 1) + ' / ' + D.length;
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === D.length - 1;
+
+    if (scroll !== false) centre(i);
+  }
+
+  function halt(){
+    if (!playing) return;
+    playing = false;
+    clearInterval(timer);
+    playBtn.textContent = '▶ Play the route';
+  }
+
+  mapwrap.addEventListener('click', function(e){
+    var g = e.target.closest ? e.target.closest('.stop') : null;
+    if (g){ halt(); select(+g.dataset.i); }
+  });
+  mapwrap.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var g = e.target.closest ? e.target.closest('.stop') : null;
+    if (g){ e.preventDefault(); halt(); select(+g.dataset.i); }
+  });
+  prevBtn.addEventListener('click', function(){ halt(); select(cur - 1); });
+  nextBtn.addEventListener('click', function(){ halt(); select(cur + 1); });
+  document.addEventListener('keydown', function(e){
+    var a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
+    if (e.key === 'ArrowRight'){ halt(); select(Math.min(cur + 1, D.length - 1)); }
+    if (e.key === 'ArrowLeft'){ halt(); select(Math.max(cur - 1, 0)); }
+  });
+
+  playBtn.addEventListener('click', function(){
+    if (playing){ halt(); return; }
+    playing = true;
+    playBtn.textContent = '❚❚ Pause';
+    var i = (cur >= D.length - 1) ? -1 : cur;
+    i++;
+    select(i);
+    timer = setInterval(function(){
+      i++;
+      if (i >= D.length){ halt(); return; }
+      select(i);
+    }, 2600);
+  });
+
+  select(0, false);
+})();
+</script>
